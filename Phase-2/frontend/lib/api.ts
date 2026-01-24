@@ -2,12 +2,31 @@
 import { Task } from './types';
 
 const getBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    // Browser environment - use NEXT_PUBLIC_APP_URL if available, otherwise use current origin
-    return process.env.NEXT_PUBLIC_APP_URL || '';
+  // Check if we're in a browser environment
+  const isBrowser = typeof window !== 'undefined';
+
+  // Get the NEXT_PUBLIC_APP_URL environment variable
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+  // Validate the environment URL to prevent invalid hostnames like 'base'
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '' && !envUrl.includes('base')) {
+    try {
+      // Attempt to parse the URL to validate it
+      const urlObj = new URL(envUrl);
+      return urlObj.href.replace(/\/$/, ''); // Remove trailing slash if present
+    } catch (e) {
+      // If URL parsing fails, fall back to default behavior
+      console.warn('Invalid NEXT_PUBLIC_APP_URL detected, falling back to default behavior');
+    }
   }
-  // Server environment - use NEXT_PUBLIC_APP_URL
-  return process.env.NEXT_PUBLIC_APP_URL || '';
+
+  // For browser environment, use current origin
+  if (isBrowser) {
+    return '';
+  }
+
+  // For server environment, return empty string (will use relative paths)
+  return '';
 };
 
 const API_BASE_URL = `${getBaseUrl()}/api`;
