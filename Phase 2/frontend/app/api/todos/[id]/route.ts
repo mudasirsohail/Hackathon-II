@@ -4,7 +4,7 @@ import { query } from '@/lib/db';
 import { Task } from '@/lib/types';
 
 // PUT /api/todos/:id - Update a specific todo
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params before accessing params.id
     const { id } = await params;
@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PATCH /api/todos/:id - Update a specific todo (for toggling completion, etc.)
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params before accessing params.id
     const { id } = await params;
@@ -148,7 +148,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE /api/todos/:id - Delete a specific todo
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params before accessing params.id
     const { id } = await params;
@@ -203,7 +203,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 }
 
 // GET /api/todos/:id - Get a specific todo
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Await params before accessing params.id
     const { id } = await params;
