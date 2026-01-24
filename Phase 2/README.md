@@ -16,8 +16,8 @@ This is a Next.js full-stack Todo App with user authentication and Neon PostgreS
 Create a `.env.local` file in the `frontend` directory with the following variables:
 
 ```env
-DATABASE_URL="postgresql://neondb_owner:npg_5jyCVxYr9bMz@ep-broad-violet-a19nfo68-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-JWT_SECRET="59bddfa65a443183098037a4e83b7e9744d520e57364302a14ba0973f00e02441345a4db0051f81b5bebc7d70a87bb3116f49285612424130317420dc1dfc563"
+DATABASE_URL=""
+JWT_SECRET=""
 ```
 
 Note: The `.env` file in the `2/backend` directory is no longer needed as all backend logic has been integrated into the Next.js application.
