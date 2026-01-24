@@ -1,7 +1,16 @@
 // frontend/lib/api.ts
 import { Task } from './types';
 
-const API_BASE_URL = '/api';
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    // Browser environment - use NEXT_PUBLIC_APP_URL if available, otherwise use current origin
+    return process.env.NEXT_PUBLIC_APP_URL || '';
+  }
+  // Server environment - use NEXT_PUBLIC_APP_URL
+  return process.env.NEXT_PUBLIC_APP_URL || '';
+};
+
+const API_BASE_URL = `${getBaseUrl()}/api`;
 
 // AUTHENTICATION API FUNCTIONS
 export const signup = async (email: string, password: string) => {
