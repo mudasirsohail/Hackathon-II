@@ -3,11 +3,7 @@ import { hashPassword } from '@/lib/password';
 import { query } from '@/lib/db';
 import { generateToken } from '@/lib/jwt';
 
-// Verify JWT_SECRET exists
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is not defined in environment variables');
-}
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production', // Will be true on Vercel which serves over HTTPS
       maxAge: 60 * 60 * 24, // 24 hours
       sameSite: 'lax',
       path: '/',

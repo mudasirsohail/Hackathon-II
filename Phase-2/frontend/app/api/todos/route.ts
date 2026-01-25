@@ -3,6 +3,8 @@ import { verifyToken } from '@/lib/jwt';
 import { query } from '@/lib/db';
 import { Task } from '@/lib/types';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

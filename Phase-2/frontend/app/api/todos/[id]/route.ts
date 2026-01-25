@@ -3,6 +3,8 @@ import { verifyToken } from '@/lib/jwt';
 import { query } from '@/lib/db';
 import { Task } from '@/lib/types';
 
+export const runtime = 'nodejs';
+
 // PUT /api/todos/:id - Update a specific todo
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

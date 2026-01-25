@@ -1,12 +1,7 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is not defined in environment variables');
-}
-
 export const generateToken = (userId: string): string => {
+  const JWT_SECRET = process.env.JWT_SECRET;
   if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not defined in environment variables');
   }
@@ -14,6 +9,7 @@ export const generateToken = (userId: string): string => {
 };
 
 export const verifyToken = (token: string): { userId: string } | null => {
+  const JWT_SECRET = process.env.JWT_SECRET;
   if (!JWT_SECRET) {
     console.error('JWT_SECRET is not defined in environment variables');
     return null;
