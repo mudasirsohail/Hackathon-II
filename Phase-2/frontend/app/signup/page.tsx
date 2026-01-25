@@ -49,19 +49,12 @@ export default function SignupPage() {
       }
 
       // If registration was successful, try to sign in
-      const result = await signIn('credentials', {
+      await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        callbackUrl: '/tasks', // Redirect to tasks page after login
       });
-
-      if (result?.ok) {
-        // Redirect to tasks page on successful signup and login
-        router.push('/tasks');
-        router.refresh(); // Refresh to update the UI
-      } else {
-        setError(result?.error || "Login failed after registration");
-      }
+      // The redirect happens automatically due to callbackUrl
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
