@@ -2,32 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Header from "@/components/Header";
 import TaskForm from "@/components/TaskForm";
 import TaskList from "@/components/TaskList";
 import { Task } from "@/lib/types";
-import { getTasks, isAuthenticated } from "@/lib/api";
+import { getTasks } from "@/lib/api";
 
 export default function TasksDashboard() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // Check if user is authenticated
-      if (!(await isAuthenticated())) {
-        // Redirect to login page if not authenticated
-        router.push('/login');
-        return;
-      }
+    if (status === "unauthenticated") {
+      router.push('/login');
+      return;
+    }
 
+    if (status === "authenticated") {
       fetchTasks();
-    };
-
-    checkAuth();
-  }, []);
+    }
+  }, [status, router]);
 
   const fetchTasks = async () => {
     try {
@@ -60,12 +58,16 @@ export default function TasksDashboard() {
     setTasks(prev => prev.filter(task => task.id !== taskId));
   };
 
-  if (loading) {
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
+  }
+
+  if (status === "unauthenticated") {
+    return null; // Redirect happens in useEffect
   }
 
   return (
@@ -76,7 +78,7 @@ export default function TasksDashboard() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Manage Your Tasks</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Add, edit, and organize your tasks efficiently. All data is stored temporarily in your browser.
+            Add, edit, and organize your tasks efficiently. All data is stored securely in your account.
           </p>
         </div>
 

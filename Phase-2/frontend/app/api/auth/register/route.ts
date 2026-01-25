@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword } from '@/lib/password';
 import { query } from '@/lib/db';
-import { generateToken } from '@/lib/jwt';
+import { v4 as uuidv4 } from 'uuid';
 
 export const runtime = 'nodejs';
 
@@ -30,37 +30,22 @@ export async function POST(request: NextRequest) {
     // Hash the password
     const hashedPassword = await hashPassword(password);
 
-    // Create the user
+    // Create the user with a UUID
+    const userId = uuidv4();
     const result = await query(
-      'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id',
-      [email, hashedPassword]
+      'INSERT INTO users (id, email, password) VALUES ($1, $2, $3) RETURNING id',
+      [userId, email, hashedPassword]
     );
 
-    const userId = result.rows[0].id;
-
-    // Generate JWT token
-    const token = generateToken(userId);
-
-    // Create response and set the token in an HTTP-only cookie
-    const response = NextResponse.json(
+    return NextResponse.json(
       {
         message: 'User created successfully',
-        user: { id: userId, email }
+        user: { id: result.rows[0].id, email }
       },
       { status: 201 }
     );
-
-    response.cookies.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Will be true on Vercel which serves over HTTPS
-      maxAge: 60 * 60 * 24, // 24 hours
-      sameSite: 'lax',
-      path: '/',
-    });
-
-    return response;
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Registration error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

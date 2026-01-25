@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/jwt';
+import { auth } from '@/auth';
 import { query } from '@/lib/db';
 import { Task } from '@/lib/types';
 
@@ -11,22 +11,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Await params before accessing params.id
     const { id } = await params;
 
-    // Get token from cookies
-    const token = request.cookies.get('token')?.value;
+    const session = await auth();
 
-    if (!token) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Verify the token
-    const payload = verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
@@ -40,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       WHERE id = $4 AND user_id = $5
       RETURNING *
     `;
-    const values = [title, description, completed, id, payload.userId];
+    const values = [title, description, completed, id, session.user.id];
 
     const result = await query(updateQuery, values);
 
@@ -69,22 +58,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Await params before accessing params.id
     const { id } = await params;
 
-    // Get token from cookies
-    const token = request.cookies.get('token')?.value;
+    const session = await auth();
 
-    if (!token) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Verify the token
-    const payload = verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
@@ -116,7 +94,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     updateFields.push(`updated_at = NOW()`);
 
     // Add id and userId to values
-    values.push(id, payload.userId);
+    values.push(id, session.user.id);
     const idParamIndex = paramIndex;
     const userIdParamIndex = paramIndex + 1;
 
@@ -155,22 +133,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     // Await params before accessing params.id
     const { id } = await params;
 
-    // Get token from cookies
-    const token = request.cookies.get('token')?.value;
+    const session = await auth();
 
-    if (!token) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Verify the token
-    const payload = verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
@@ -181,7 +148,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       WHERE id = $1 AND user_id = $2
       RETURNING *
     `;
-    const values = [id, payload.userId];
+    const values = [id, session.user.id];
 
     const result = await query(deleteQuery, values);
 
@@ -210,22 +177,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Await params before accessing params.id
     const { id } = await params;
 
-    // Get token from cookies
-    const token = request.cookies.get('token')?.value;
+    const session = await auth();
 
-    if (!token) {
+    if (!session || !session.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Verify the token
-    const payload = verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
@@ -236,7 +192,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       FROM todos
       WHERE id = $1 AND user_id = $2
     `;
-    const values = [id, payload.userId];
+    const values = [id, session.user.id];
 
     const result = await query(getQuery, values);
 

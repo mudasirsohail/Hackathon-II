@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signup } from "@/lib/api";
+import { signIn } from 'next-auth/react';
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -11,7 +11,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,21 +27,40 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const { success, data } = await signup(email, password);
+      // First, register the user
+      const registerResponse = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (success) {
-        // Small delay to ensure token is stored in localStorage
-        await new Promise(resolve => setTimeout(resolve, 100));
-        // Redirect to tasks page on successful signup
+      const registerData = await registerResponse.json();
+
+      if (!registerResponse.ok) {
+        if (registerData.error && registerData.error.includes('already exists')) {
+          setError('User with this email already exists. Please log in instead.');
+        } else {
+          setError(registerData.error || "Signup failed");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // If registration was successful, try to sign in
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        // Redirect to tasks page on successful signup and login
         router.push('/tasks');
         router.refresh(); // Refresh to update the UI
       } else {
-        // Handle different error cases
-        if (data.error && data.error.includes('already exists')) {
-          setError('User with this email already exists. Please log in instead.');
-        } else {
-          setError(data.error || "Signup failed");
-        }
+        setError(result?.error || "Login failed after registration");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
@@ -58,7 +77,7 @@ export default function SignupPage() {
             Create a new account
           </h2>
         </div>
-        
+
         {error && (
           <div className="rounded-md bg-red-50 p-4">
             <div className="flex">
@@ -73,7 +92,7 @@ export default function SignupPage() {
             </div>
           </div>
         )}
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -92,7 +111,7 @@ export default function SignupPage() {
                 placeholder="Enter your email"
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -109,7 +128,7 @@ export default function SignupPage() {
                 placeholder="Create a password"
               />
             </div>
-            
+
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Confirm Password
@@ -137,7 +156,7 @@ export default function SignupPage() {
               {loading ? 'Creating account...' : 'Sign up'}
             </button>
           </div>
-          
+
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}

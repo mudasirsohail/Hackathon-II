@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { login } from "@/lib/api";
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,16 +19,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { success, data } = await login(email, password);
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
 
-      if (success) {
-        // Small delay to ensure token is stored in localStorage
-        await new Promise(resolve => setTimeout(resolve, 100));
+      if (result?.ok) {
         // Redirect to tasks page on successful login
         router.push('/tasks');
         router.refresh(); // Refresh to update the UI
       } else {
-        setError(data.error || "Login failed");
+        setError(result?.error || "Login failed");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
@@ -45,7 +47,7 @@ export default function LoginPage() {
             Sign in to your account
           </h2>
         </div>
-        
+
         {error && (
           <div className="rounded-md bg-red-50 p-4">
             <div className="flex">
@@ -60,7 +62,7 @@ export default function LoginPage() {
             </div>
           </div>
         )}
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -79,7 +81,7 @@ export default function LoginPage() {
                 placeholder="Enter your email"
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -107,7 +109,7 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
-          
+
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}

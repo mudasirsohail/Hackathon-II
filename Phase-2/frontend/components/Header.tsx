@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,21 +17,6 @@ const Header = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // Check authentication status on component mount
-    const checkAuthStatus = async () => {
-      try {
-        const authenticated = await import('../lib/api').then(api => api.isAuthenticated());
-        setIsLoggedIn(authenticated);
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-        setIsLoggedIn(false);
-      }
-    };
-
-    checkAuthStatus();
   }, []);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,18 +45,10 @@ const Header = () => {
   // Handle logout
   const handleLogout = async () => {
     try {
-      const { logout } = await import('../lib/api');
-      await logout();
-
-      // Update state after logout
-      setIsLoggedIn(false);
-
-      // Redirect to home page
-      window.location.href = '/';
+      await signOut({ redirect: true, callbackUrl: '/' });
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if logout API fails, still update local state and redirect
-      setIsLoggedIn(false);
+      // Redirect to home page even if there's an error
       window.location.href = '/';
     }
   };
@@ -149,7 +127,7 @@ const Header = () => {
 
           {/* Conditional rendering: Show Get Started button if not logged in, else show logout button */}
           <div className="hidden md:block">
-            {!isLoggedIn ? (
+            {status === "unauthenticated" ? (
               <Link
                 href="/tasks"
                 className="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-md hover:shadow-lg"
@@ -216,7 +194,7 @@ const Header = () => {
                 </Link>
               ))}
 
-              {!isLoggedIn ? (
+              {status === "unauthenticated" ? (
                 <Link
                   href="/tasks"
                   className="w-full text-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300"

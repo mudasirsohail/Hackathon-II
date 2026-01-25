@@ -1,5 +1,6 @@
 // frontend/lib/api.ts
 import { Task } from './types';
+import { signIn, signOut as nextAuthSignOut } from 'next-auth/react';
 
 const getBaseUrl = () => {
   // Check if we're in a browser environment
@@ -33,57 +34,64 @@ const API_BASE_URL = `${getBaseUrl()}/api`;
 
 // AUTHENTICATION API FUNCTIONS
 export const signup = async (email: string, password: string) => {
-  const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
-    credentials: 'include',
-  });
+  try {
+    // For signup, we'll make a direct API call to create the user
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  return { success: response.ok, data };
+    if (response.ok) {
+      // After successful signup, try to sign in
+      const signInResult = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      return { success: !!signInResult?.ok, data: signInResult };
+    }
+
+    return { success: false, data };
+  } catch (error) {
+    return { success: false, data: { error: 'Network error' } };
+  }
 };
 
 export const login = async (email: string, password: string) => {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
-    credentials: 'include',
-  });
+  try {
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
 
-  const data = await response.json();
-
-  return { success: response.ok, data };
+    return { success: !!result?.ok, data: result };
+  } catch (error) {
+    return { success: false, data: { error: 'Network error' } };
+  }
 };
 
 export const logout = async () => {
-  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  });
-
-  // Clear any local storage tokens if they exist
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('token');
-  }
-
-  return response.ok;
+  await nextAuthSignOut({ redirect: false });
+  return true;
 };
 
 // TASK API FUNCTIONS
 export const getTasks = async (): Promise<Task[]> => {
   const response = await fetch(`${API_BASE_URL}/todos`, {
     method: 'GET',
-    credentials: 'include',
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in again');
+    }
     throw new Error(`Failed to fetch tasks: ${response.status}`);
   }
 
@@ -97,10 +105,12 @@ export const createTask = async (title: string, description: string): Promise<Ta
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ title, description }),
-    credentials: 'include',
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in again');
+    }
     throw new Error(`Failed to create task: ${response.status}`);
   }
 
@@ -114,10 +124,12 @@ export const updateTask = async (id: string, updates: Partial<Task>): Promise<Ta
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(updates),
-    credentials: 'include',
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in again');
+    }
     throw new Error(`Failed to update task: ${response.status}`);
   }
 
@@ -127,10 +139,12 @@ export const updateTask = async (id: string, updates: Partial<Task>): Promise<Ta
 export const deleteTask = async (id: string): Promise<boolean> => {
   const response = await fetch(`${API_BASE_URL}/todos/${id}`, {
     method: 'DELETE',
-    credentials: 'include',
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in again');
+    }
     throw new Error(`Failed to delete task: ${response.status}`);
   }
 
@@ -142,7 +156,6 @@ export const isAuthenticated = async (): Promise<boolean> => {
   try {
     const response = await fetch(`${API_BASE_URL}/todos`, {
       method: 'GET',
-      credentials: 'include',
     });
     return response.status !== 401;
   } catch (error) {
