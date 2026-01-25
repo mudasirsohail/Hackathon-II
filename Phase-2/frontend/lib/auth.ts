@@ -53,7 +53,11 @@ export const authOptions: NextAuthConfig = {
 
           if (!valid) return null;
 
-          return { id: user.id, email: user.email };
+          // Return full user object with all necessary fields
+          return {
+            id: user.id,
+            email: user.email
+          };
         } catch (error) {
           console.error("AUTH AUTHORIZE ERROR:", error);
           return null;
@@ -66,13 +70,20 @@ export const authOptions: NextAuthConfig = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) session.user.id = token.id as string;
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
+      }
       return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
 };
