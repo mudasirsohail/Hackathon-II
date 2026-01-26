@@ -122,71 +122,50 @@ export const authOptions: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Missing credentials");
+        }
+
+        const dbUrl = process.env.DATABASE_URL;
+        if (!dbUrl) {
+          throw new Error("DATABASE_URL is not set");
+        }
+
+        const email = (credentials.email as string).toLowerCase().trim();
+
+        const pool = new Pool({
+          connectionString: dbUrl,
+          ssl: { rejectUnauthorized: false },
+        });
+
         try {
-          if (!credentials?.email || !credentials?.password) {
-            return null;
-          }
-
-          const dbUrl = process.env.DATABASE_URL;
-          if (!dbUrl) {
-            console.error("DATABASE_URL is not set");
-            return null;
-          }
-
-          const pool = new Pool({
-            connectionString: dbUrl,
-            ssl: { rejectUnauthorized: false },
-          });
-
           const res = await pool.query(
             "SELECT id, email, password FROM users WHERE email = $1",
-            [credentials.email]
+            [email]
           );
-
-
-          console.log("AUTH EMAIL:", credentials.email);
-          console.log("DB RESULT:", res.rows);
-
 
           const user = res.rows[0];
 
-
           if (!user) {
-            console.error("NO USER FOUND IN DATABASE");
-            await pool.end();
-            return null;
+            throw new Error("User not found");
           }
 
-          if (!user.password || !credentials.password) {
-            console.error("MISSING PASSWORD FIELD");
-            await pool.end();
-            return null;
-          }
-
-
-          const valid = await bcrypt.compare(
+          const isValid = await bcrypt.compare(
             credentials.password as string,
             user.password
           );
 
-
-          console.log("PASSWORD VALID:", valid);
-
-
-          if (!valid) {
-            console.error("PASSWORD MISMATCH");
-            await pool.end();
-            return null;
+          if (!isValid) {
+            throw new Error("Invalid password");
           }
 
-
+          // CRITICAL: RETURN ONLY THIS
           return {
-            id: user.id,
-            email: user.email,
+            id: user.id.toString(),
+            email: user.email
           };
-        } catch (error) {
-          console.error("AUTH AUTHORIZE ERROR:", error);
-          return null;
+        } finally {
+          await pool.end();
         }
       },
     }),
