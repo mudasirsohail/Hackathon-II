@@ -27,8 +27,8 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      // First, register the user
-      const registerResponse = await fetch('/api/auth/register', {
+      // Register the user by calling the credentials provider with a signup flag
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,26 +36,32 @@ export default function SignupPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const registerData = await registerResponse.json();
+      const data = await response.json();
 
-      if (!registerResponse.ok) {
-        if (registerData.error && registerData.error.includes('already exists')) {
+      if (!response.ok) {
+        if (data.error && data.error.includes('already exists')) {
           setError('User with this email already exists. Please log in instead.');
         } else {
-          setError(registerData.error || "Signup failed");
+          setError(data.error || "Signup failed");
         }
         setLoading(false);
         return;
       }
 
-      // If registration was successful, try to sign in
-      await signIn('credentials', {
+      // After successful registration, sign in the user
+      const signInResult = await signIn('credentials', {
         email,
         password,
-        redirect: true,
-        callbackUrl: '/tasks', // Redirect to tasks page after login
+        redirect: false, // Don't redirect automatically, we'll handle it
       });
-      // The redirect happens automatically due to callbackUrl
+
+      if (signInResult?.ok) {
+        // Redirect to tasks page after successful login
+        router.push('/tasks');
+        router.refresh(); // Refresh to update the UI
+      } else {
+        setError(signInResult?.error || "Login failed after registration");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {

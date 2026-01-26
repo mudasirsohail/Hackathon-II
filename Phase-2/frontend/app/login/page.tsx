@@ -19,13 +19,19 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn('credentials', {
+      const result = await signIn('credentials', {
         email,
         password,
-        redirect: true,
-        callbackUrl: '/tasks', // Redirect to tasks page after login
+        redirect: false, // Don't redirect automatically, we'll handle it
       });
-      // The redirect happens automatically due to callbackUrl
+
+      if (result?.ok) {
+        // Manually redirect to tasks page on successful login
+        router.push('/tasks');
+        router.refresh(); // Refresh to update the UI
+      } else {
+        setError(result?.error || "Login failed");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
