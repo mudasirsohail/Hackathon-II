@@ -150,10 +150,12 @@ export const authOptions: NextAuthConfig = {
             return null;
           }
 
-          const isValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
+          if (!user.password || !credentials.password) {
+            await pool.end();
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(credentials.password as string, user.password);
 
           await pool.end();
 

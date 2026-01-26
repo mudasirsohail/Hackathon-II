@@ -22,6 +22,7 @@ export default function LoginPage() {
       await signIn('credentials', {
         email,
         password,
+        redirect: true,
         callbackUrl: '/tasks', // Redirect to tasks page after login
       });
       // The redirect happens automatically due to callbackUrl
