@@ -1,8 +1,10 @@
-import { Pool } from 'pg';
+import { Pool } from '@neondatabase/serverless';
 
 // Initialize PostgreSQL pool
 const getDatabaseUrl = (): string => {
   const connectionString = process.env.DATABASE_URL;
+
+  console.log('DATABASE_URL in migrate.ts:', connectionString);
 
   if (!connectionString) {
     throw new Error('DATABASE_URL is not defined in environment variables');
@@ -10,6 +12,14 @@ const getDatabaseUrl = (): string => {
 
   if (!connectionString.startsWith('postgresql://') && !connectionString.startsWith('postgres://')) {
     throw new Error('DATABASE_URL must be a valid PostgreSQL connection string starting with postgresql:// or postgres://');
+  }
+
+  // Parse the connection string to inspect its components
+  try {
+    const url = new URL(connectionString);
+    console.log('Connection string parsed in migrate.ts - protocol:', url.protocol, 'hostname:', url.hostname, 'pathname:', url.pathname);
+  } catch (parseError) {
+    console.error('Error parsing DATABASE_URL in migrate.ts:', parseError);
   }
 
   return connectionString;
