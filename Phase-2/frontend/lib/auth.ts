@@ -202,22 +202,55 @@ export const authOptions: NextAuthConfig = {
 
   callbacks: {
     async jwt({ token, user }) {
-      console.log("JWT callback called", { hasUser: !!user, tokenSub: token.sub });
+      console.log("JWT callback called", {
+        hasUser: !!user,
+        tokenHasId: !!token.id,
+        tokenHasEmail: !!token.email,
+        tokenSub: token.sub
+      });
+
       if (user) {
+        console.log("JWT: User object received", user);
         token.id = user.id;
         token.email = user.email;
         console.log("JWT token updated with user info");
+      } else {
+        console.log("JWT: No user object, using existing token");
       }
+
+      // Ensure token has required properties
+      if (!token.id) {
+        console.log("JWT: Token missing id, using sub as fallback");
+        token.id = token.sub || token.id;
+      }
+
       return token;
     },
 
     async session({ session, token }) {
-      console.log("Session callback called", { hasToken: !!token, tokenHasId: !!token.id });
+      console.log("Session callback called", {
+        hasSession: !!session,
+        hasToken: !!token,
+        tokenHasId: !!token.id,
+        tokenHasEmail: !!token.email,
+        sessionHasUser: !!session?.user
+      });
+
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
-        console.log("Session updated with user info");
+      } else {
+        // Initialize user object if it doesn't exist
+        session.user = {} as any; // Initialize as empty and populate below
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
       }
+
+      console.log("Final session object:", {
+        userId: session.user?.id,
+        userEmail: session.user?.email
+      });
+
       return session;
     },
   },
