@@ -5,15 +5,15 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     const databaseUrl = process.env.DATABASE_URL;
-    
+
     const debugInfo = {
       hasDatabaseUrl: !!databaseUrl,
       databaseUrlLength: databaseUrl?.length || 0,
       databaseUrlPrefix: databaseUrl?.substring(0, 20) || "undefined",
       databaseUrlSuffix: databaseUrl ? databaseUrl.substring(Math.max(0, databaseUrl.length - 20)) : "undefined",
       allEnvKeys: Object.keys(process.env).filter(k => k.includes('DATABASE')),
-      fullDatabaseUrlPreview: databaseUrl ? 
-        `${databaseUrl.substring(0, 50)}...${databaseUrl.substring(databaseUrl.length - 20)}` : 
+      fullDatabaseUrlPreview: databaseUrl ?
+        `${databaseUrl.substring(0, 50)}...${databaseUrl.substring(databaseUrl.length - 20)}` :
         "undefined",
       isLiteralString: databaseUrl === "$DATABASE_URL" || databaseUrl?.includes("$DATABASE_URL"),
       sampleOfEnvVars: Object.fromEntries(

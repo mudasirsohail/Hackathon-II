@@ -5,9 +5,5 @@
     "app/**/*": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "DATABASE_URL": "$DATABASE_URL",
-    "JWT_SECRET": "$JWT_SECRET"
   }
 }
