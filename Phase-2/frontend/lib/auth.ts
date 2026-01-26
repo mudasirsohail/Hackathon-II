@@ -143,28 +143,45 @@ export const authOptions: NextAuthConfig = {
             [credentials.email]
           );
 
+
+          console.log("AUTH EMAIL:", credentials.email);
+          console.log("DB RESULT:", res.rows);
+
+
           const user = res.rows[0];
 
+
           if (!user) {
+            console.error("NO USER FOUND IN DATABASE");
             await pool.end();
             return null;
           }
 
           if (!user.password || !credentials.password) {
+            console.error("MISSING PASSWORD FIELD");
             await pool.end();
             return null;
           }
 
-          const isValid = await bcrypt.compare(credentials.password as string, user.password);
 
-          await pool.end();
+          const valid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
 
-          if (!isValid) {
+
+          console.log("PASSWORD VALID:", valid);
+
+
+          if (!valid) {
+            console.error("PASSWORD MISMATCH");
+            await pool.end();
             return null;
           }
 
+
           return {
-            id: String(user.id), // MUST be string
+            id: user.id,
             email: user.email,
           };
         } catch (error) {
