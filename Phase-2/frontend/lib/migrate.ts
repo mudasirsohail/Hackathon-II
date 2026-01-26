@@ -1,4 +1,4 @@
-import { Pool } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 
 // Initialize PostgreSQL pool
 const getDatabaseUrl = (): string => {
@@ -25,29 +25,24 @@ const getDatabaseUrl = (): string => {
   return connectionString;
 };
 
-const pool = new Pool({
-  connectionString: getDatabaseUrl(),
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const sql = neon(getDatabaseUrl());
 
 export const runMigrations = async () => {
   try {
     console.log('Running database migrations...');
     
     // Create users table if it doesn't exist
-    await pool.query(`
+    await sql`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT now()
       )
-    `);
-    
+    `;
+
     // Create todos table if it doesn't exist
-    await pool.query(`
+    await sql`
       CREATE TABLE IF NOT EXISTS todos (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
@@ -57,7 +52,7 @@ export const runMigrations = async () => {
         created_at TIMESTAMP DEFAULT now(),
         updated_at TIMESTAMP DEFAULT now()
       )
-    `);
+    `;
     
     console.log('Database migrations completed successfully!');
   } catch (error) {

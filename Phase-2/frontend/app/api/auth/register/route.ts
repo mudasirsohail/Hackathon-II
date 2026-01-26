@@ -19,8 +19,11 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
+    const typedExistingUser = {
+      rows: existingUser.rows as Array<{ id: string }>
+    };
 
-    if (existingUser.rows.length > 0) {
+    if (typedExistingUser.rows.length > 0) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 409 }
@@ -36,11 +39,14 @@ export async function POST(request: NextRequest) {
       'INSERT INTO users (id, email, password) VALUES ($1, $2, $3) RETURNING id',
       [userId, email, hashedPassword]
     );
+    const typedResult = {
+      rows: result.rows as Array<{ id: string }>
+    };
 
     return NextResponse.json(
       {
         message: 'User created successfully',
-        user: { id: result.rows[0].id, email }
+        user: { id: typedResult.rows[0].id, email }
       },
       { status: 201 }
     );

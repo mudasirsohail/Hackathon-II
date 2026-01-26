@@ -23,8 +23,11 @@ export async function GET(request: NextRequest) {
     const values = [session.user.id];
 
     const result = await query(getQuery, values);
+    const typedResult = {
+      rows: result.rows as Task[]
+    };
 
-    return NextResponse.json(result.rows);
+    return NextResponse.json(typedResult.rows);
   } catch (error) {
     console.error('Get todos error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -61,7 +64,10 @@ export async function POST(request: NextRequest) {
     const values = [title, description || '', false, session.user.id];
 
     const result = await query(insertQuery, values);
-    const newTask: Task = result.rows[0];
+    const typedResult = {
+      rows: result.rows as Task[]
+    };
+    const newTask: Task = typedResult.rows[0];
 
     return NextResponse.json(newTask, { status: 201 });
   } catch (error) {

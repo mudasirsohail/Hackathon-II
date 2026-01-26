@@ -32,15 +32,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const values = [title, description, completed, id, session.user.id];
 
     const result = await query(updateQuery, values);
+    const typedResult = {
+      rows: result.rows as Task[]
+    };
 
-    if (result.rows.length === 0) {
+    if (typedResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Todo not found or does not belong to user' },
         { status: 404 }
       );
     }
 
-    const updatedTask: Task = result.rows[0];
+    const updatedTask: Task = typedResult.rows[0];
 
     return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
@@ -107,15 +110,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     `;
 
     const result = await query(updateQuery, values);
+    const typedResult = {
+      rows: result.rows as Task[]
+    };
 
-    if (result.rows.length === 0) {
+    if (typedResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Todo not found or does not belong to user' },
         { status: 404 }
       );
     }
 
-    const updatedTask: Task = result.rows[0];
+    const updatedTask: Task = typedResult.rows[0];
 
     return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
@@ -151,15 +157,18 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const values = [id, session.user.id];
 
     const result = await query(deleteQuery, values);
+    const typedResult = {
+      rows: result.rows as Task[]
+    };
 
-    if (result.rows.length === 0) {
+    if (typedResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Todo not found or does not belong to user' },
         { status: 404 }
       );
     }
 
-    const deletedTask: Task = result.rows[0];
+    const deletedTask: Task = typedResult.rows[0];
 
     return NextResponse.json({ message: 'Todo deleted successfully', task: deletedTask }, { status: 200 });
   } catch (error) {
@@ -195,15 +204,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const values = [id, session.user.id];
 
     const result = await query(getQuery, values);
+    const typedResult = {
+      rows: result.rows as Task[]
+    };
 
-    if (result.rows.length === 0) {
+    if (typedResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Todo not found or does not belong to user' },
         { status: 404 }
       );
     }
 
-    const task: Task = result.rows[0];
+    const task: Task = typedResult.rows[0];
 
     return NextResponse.json(task, { status: 200 });
   } catch (error) {

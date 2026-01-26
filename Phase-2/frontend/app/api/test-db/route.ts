@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Pool } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 
 export const runtime = 'nodejs';
 
@@ -25,21 +25,16 @@ export async function GET() {
       console.error('Error parsing DATABASE_URL:', parseError);
     }
 
-    const pool = new Pool({
-      connectionString: dbUrl,
-      ssl: { rejectUnauthorized: false },
-    });
+    const sql = neon(dbUrl);
 
     // Test the connection
-    const result = await pool.query('SELECT NOW() as now');
+    const result = await sql`SELECT NOW() as now`;
 
-    console.log('Database connection test successful:', result.rows[0]);
-
-    await pool.end();
+    console.log('Database connection test successful:', result[0]);
 
     return NextResponse.json({
       success: true,
-      timestamp: result.rows[0].now,
+      timestamp: result[0].now,
       message: 'Database connection successful'
     });
   } catch (error) {

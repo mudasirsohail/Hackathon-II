@@ -75,16 +75,19 @@ export const {
             const result = await query(
               "SELECT id, email, password FROM users WHERE email = $1",
               [email]
-            ) as { rows: Array<{ id: string; email: string; password: string }> };
+            );
+            const typedResult = {
+              rows: result.rows as Array<{ id: string; email: string; password: string }>
+            };
 
-            console.log("AUTHORIZE: Database query result rows count:", result.rows.length);
+            console.log("AUTHORIZE: Database query result rows count:", typedResult.rows.length);
 
-            if (result.rows.length === 0) {
+            if (typedResult.rows.length === 0) {
               console.log("AUTHORIZE: No user found with email:", email);
               return null;
             }
 
-            const dbUser = result.rows[0];
+            const dbUser = typedResult.rows[0];
             console.log("AUTHORIZE: User found in database, validating password");
 
             // Validate that the user object has required fields
