@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword } from '@/lib/password';
-import { query } from '@/lib/db';
+import { getSql } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 export const runtime = 'nodejs';
@@ -18,12 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
-    const typedExistingUser = {
-      rows: existingUser.rows as Array<{ id: string }>
-    };
+    const sql = getSql();
+    const existingUser = await sql`SELECT id FROM users WHERE email = ${email}`;
 
-    if (typedExistingUser.rows.length > 0) {
+    if (Array.isArray(existingUser) && existingUser.length > 0) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 409 }
@@ -35,18 +33,14 @@ export async function POST(request: NextRequest) {
 
     // Create the user with a UUID
     const userId = uuidv4();
-    const result = await query(
-      'INSERT INTO users (id, email, password) VALUES ($1, $2, $3) RETURNING id',
-      [userId, email, hashedPassword]
-    );
-    const typedResult = {
-      rows: result.rows as Array<{ id: string }>
-    };
+    const result = await sql`INSERT INTO users (id, email, password) VALUES (${userId}, ${email}, ${hashedPassword}) RETURNING id`;
+
+    const newUser: { id: string } = (Array.isArray(result) && result.length > 0 ? result[0] : result) as { id: string };
 
     return NextResponse.json(
       {
         message: 'User created successfully',
-        user: { id: typedResult.rows[0].id, email }
+        user: { id: newUser.id, email }
       },
       { status: 201 }
     );
