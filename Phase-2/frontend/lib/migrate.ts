@@ -25,12 +25,24 @@ const getDatabaseUrl = (): string => {
   return connectionString;
 };
 
-const sql = neon(getDatabaseUrl());
+// Create a singleton sql client instance
+let sqlInstance: ReturnType<typeof neon> | null = null;
+
+const getSqlClient = () => {
+  if (!sqlInstance) {
+    const connectionString = getDatabaseUrl();
+    console.log('Creating new neon client for migrations with connection string:', connectionString);
+    sqlInstance = neon(connectionString);
+  }
+
+  return sqlInstance;
+};
 
 export const runMigrations = async () => {
   try {
     console.log('Running database migrations...');
-    
+    const sql = getSqlClient();
+
     // Create users table if it doesn't exist
     await sql`
       CREATE TABLE IF NOT EXISTS users (
