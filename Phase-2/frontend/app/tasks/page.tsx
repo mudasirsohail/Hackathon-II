@@ -14,10 +14,12 @@ export default function TasksDashboard() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (status === "loading") return; // Wait for session status to resolve
+
     if (status === "unauthenticated") {
       router.replace('/login');
       return;
@@ -30,7 +32,7 @@ export default function TasksDashboard() {
 
   const fetchTasks = async () => {
     try {
-      setLoading(true);
+      setPageLoading(true);
       const tasksData = await getTasks();
       setTasks(tasksData);
       setError(null);
@@ -43,7 +45,7 @@ export default function TasksDashboard() {
         router.replace('/login');
       }
     } finally {
-      setLoading(false);
+      setPageLoading(false);
     }
   };
 
@@ -59,7 +61,7 @@ export default function TasksDashboard() {
     setTasks(prev => prev.filter(task => task.id !== taskId));
   };
 
-  if (status === "loading" || loading) {
+  if (status === "loading" || pageLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
