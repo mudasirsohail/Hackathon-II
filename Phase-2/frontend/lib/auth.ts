@@ -122,50 +122,75 @@ export const authOptions: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing credentials");
-        }
-
-        const dbUrl = process.env.DATABASE_URL;
-        if (!dbUrl) {
-          throw new Error("DATABASE_URL is not set");
-        }
-
-        const email = (credentials.email as string).toLowerCase().trim();
-
-        const pool = new Pool({
-          connectionString: dbUrl,
-          ssl: { rejectUnauthorized: false },
-        });
-
         try {
+          console.log("Authorize function called with:", {
+            hasEmail: !!credentials?.email,
+            hasPassword: !!credentials?.password,
+            email: credentials?.email
+          });
+
+          if (!credentials?.email || !credentials?.password) {
+            console.error("Missing credentials in authorize function");
+            throw new Error("Missing credentials");
+          }
+
+          const dbUrl = process.env.DATABASE_URL;
+          if (!dbUrl) {
+            console.error("DATABASE_URL is not set in environment");
+            throw new Error("DATABASE_URL is not set");
+          }
+
+          const email = (credentials.email as string).toLowerCase().trim();
+          console.log("Attempting to find user with email:", email);
+
+          const pool = new Pool({
+            connectionString: dbUrl,
+            ssl: { rejectUnauthorized: false },
+          });
+
           const res = await pool.query(
             "SELECT id, email, password FROM users WHERE email = $1",
             [email]
           );
 
+          console.log("Database query result:", {
+            rowCount: res.rowCount,
+            hasRows: res.rows.length > 0
+          });
+
           const user = res.rows[0];
 
           if (!user) {
+            console.error("User not found in database for email:", email);
+            await pool.end();
             throw new Error("User not found");
           }
+
+          console.log("User found in database, checking password...");
 
           const isValid = await bcrypt.compare(
             credentials.password as string,
             user.password
           );
 
+          console.log("Password validation result:", isValid);
+
           if (!isValid) {
+            console.error("Invalid password for user:", email);
+            await pool.end();
             throw new Error("Invalid password");
           }
+
+          console.log("User authenticated successfully:", user.id);
 
           // CRITICAL: RETURN ONLY THIS
           return {
             id: user.id.toString(),
             email: user.email
           };
-        } finally {
-          await pool.end();
+        } catch (error) {
+          console.error("AUTHORIZE ERROR:", error);
+          throw error;
         }
       },
     }),
@@ -177,17 +202,21 @@ export const authOptions: NextAuthConfig = {
 
   callbacks: {
     async jwt({ token, user }) {
+      console.log("JWT callback called", { hasUser: !!user, tokenSub: token.sub });
       if (user) {
         token.id = user.id;
         token.email = user.email;
+        console.log("JWT token updated with user info");
       }
       return token;
     },
 
     async session({ session, token }) {
+      console.log("Session callback called", { hasToken: !!token, tokenHasId: !!token.id });
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
+        console.log("Session updated with user info");
       }
       return session;
     },
