@@ -40,6 +40,9 @@ const getSqlClient = () => {
   return sql;
 };
 
+// Export the neon client function for direct use with template literals
+export const getSql = getSqlClient;
+
 // Helper function to execute queries with parameters
 export const query = async (text: string, params?: any[]) => {
   try {

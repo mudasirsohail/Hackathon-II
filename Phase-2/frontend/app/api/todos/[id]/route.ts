@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { query } from '@/lib/db';
+import { getSql } from '@/lib/db';
 import { Task } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -22,34 +22,27 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { title, description, completed } = await request.json();
 
-    // Update the todo in the database
-    const updateQuery = `
-      UPDATE todos
-      SET title = $1, description = $2, completed = $3, updated_at = NOW()
-      WHERE id = $4 AND user_id = $5
-      RETURNING *
-    `;
-    const values = [title, description, completed, id, session.user.id];
+    // Update the todo in the database using template literals
+    const sql = getSql();
+    const result = await sql`UPDATE todos SET title = ${title}, description = ${description}, completed = ${completed}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
 
-    const result = await query(updateQuery, values);
-    const typedResult = {
-      rows: result.rows as Task[]
-    };
-
-    if (typedResult.rows.length === 0) {
+    if (Array.isArray(result) && result.length === 0) {
       return NextResponse.json(
         { error: 'Todo not found or does not belong to user' },
         { status: 404 }
       );
     }
 
-    const updatedTask: Task = typedResult.rows[0];
+    const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
 
     return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
     console.error('Update todo error:', error);
+    console.error('Error name:', (error as Error).name);
+    console.error('Error message:', (error as Error).message);
+    console.error('Error stack:', (error as Error).stack);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: (error as Error).message },
       { status: 500 }
     );
   }
@@ -72,62 +65,115 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const updates = await request.json();
 
-    // Build dynamic update query
-    const updateFields: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
+    // Build dynamic update query using template literals
+    const sql = getSql();
 
-    if (updates.title !== undefined) {
-      updateFields.push(`title = $${paramIndex}`);
-      values.push(updates.title);
-      paramIndex++;
-    }
-    if (updates.description !== undefined) {
-      updateFields.push(`description = $${paramIndex}`);
-      values.push(updates.description);
-      paramIndex++;
-    }
-    if (updates.completed !== undefined) {
-      updateFields.push(`completed = $${paramIndex}`);
-      values.push(updates.completed);
-      paramIndex++;
-    }
+    // Handle different update scenarios with proper template literals
+    if (updates.title !== undefined && updates.description !== undefined && updates.completed !== undefined) {
+      // All three fields are being updated
+      const result = await sql`UPDATE todos SET title = ${updates.title}, description = ${updates.description}, completed = ${updates.completed}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
 
-    // Add updated_at field
-    updateFields.push(`updated_at = NOW()`);
+      if (Array.isArray(result) && result.length === 0) {
+        return NextResponse.json(
+          { error: 'Todo not found or does not belong to user' },
+          { status: 404 }
+        );
+      }
 
-    // Add id and userId to values
-    values.push(id, session.user.id);
-    const idParamIndex = paramIndex;
-    const userIdParamIndex = paramIndex + 1;
+      const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
+      return NextResponse.json(updatedTask, { status: 200 });
+    } else if (updates.title !== undefined && updates.description !== undefined) {
+      // Title and description are being updated
+      const result = await sql`UPDATE todos SET title = ${updates.title}, description = ${updates.description}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
 
-    // Construct the query
-    const updateQuery = `
-      UPDATE todos
-      SET ${updateFields.join(', ')}
-      WHERE id = $${idParamIndex} AND user_id = $${userIdParamIndex}
-      RETURNING *
-    `;
+      if (Array.isArray(result) && result.length === 0) {
+        return NextResponse.json(
+          { error: 'Todo not found or does not belong to user' },
+          { status: 404 }
+        );
+      }
 
-    const result = await query(updateQuery, values);
-    const typedResult = {
-      rows: result.rows as Task[]
-    };
+      const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
+      return NextResponse.json(updatedTask, { status: 200 });
+    } else if (updates.title !== undefined && updates.completed !== undefined) {
+      // Title and completed are being updated
+      const result = await sql`UPDATE todos SET title = ${updates.title}, completed = ${updates.completed}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
 
-    if (typedResult.rows.length === 0) {
+      if (Array.isArray(result) && result.length === 0) {
+        return NextResponse.json(
+          { error: 'Todo not found or does not belong to user' },
+          { status: 404 }
+        );
+      }
+
+      const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
+      return NextResponse.json(updatedTask, { status: 200 });
+    } else if (updates.description !== undefined && updates.completed !== undefined) {
+      // Description and completed are being updated
+      const result = await sql`UPDATE todos SET description = ${updates.description}, completed = ${updates.completed}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
+
+      if (Array.isArray(result) && result.length === 0) {
+        return NextResponse.json(
+          { error: 'Todo not found or does not belong to user' },
+          { status: 404 }
+        );
+      }
+
+      const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
+      return NextResponse.json(updatedTask, { status: 200 });
+    } else if (updates.title !== undefined) {
+      // Only title is being updated
+      const result = await sql`UPDATE todos SET title = ${updates.title}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
+
+      if (Array.isArray(result) && result.length === 0) {
+        return NextResponse.json(
+          { error: 'Todo not found or does not belong to user' },
+          { status: 404 }
+        );
+      }
+
+      const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
+      return NextResponse.json(updatedTask, { status: 200 });
+    } else if (updates.description !== undefined) {
+      // Only description is being updated
+      const result = await sql`UPDATE todos SET description = ${updates.description}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
+
+      if (Array.isArray(result) && result.length === 0) {
+        return NextResponse.json(
+          { error: 'Todo not found or does not belong to user' },
+          { status: 404 }
+        );
+      }
+
+      const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
+      return NextResponse.json(updatedTask, { status: 200 });
+    } else if (updates.completed !== undefined) {
+      // Only completed is being updated
+      const result = await sql`UPDATE todos SET completed = ${updates.completed}, updated_at = NOW() WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
+
+      if (Array.isArray(result) && result.length === 0) {
+        return NextResponse.json(
+          { error: 'Todo not found or does not belong to user' },
+          { status: 404 }
+        );
+      }
+
+      const updatedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
+      return NextResponse.json(updatedTask, { status: 200 });
+    } else {
+      // No updates provided
       return NextResponse.json(
-        { error: 'Todo not found or does not belong to user' },
-        { status: 404 }
+        { error: 'No valid fields to update' },
+        { status: 400 }
       );
     }
-
-    const updatedTask: Task = typedResult.rows[0];
-
-    return NextResponse.json(updatedTask, { status: 200 });
   } catch (error) {
     console.error('Patch todo error:', error);
+    console.error('Error name:', (error as Error).name);
+    console.error('Error message:', (error as Error).message);
+    console.error('Error stack:', (error as Error).stack);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: (error as Error).message },
       { status: 500 }
     );
   }
@@ -148,33 +194,27 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       );
     }
 
-    // Delete the todo from the database
-    const deleteQuery = `
-      DELETE FROM todos
-      WHERE id = $1 AND user_id = $2
-      RETURNING *
-    `;
-    const values = [id, session.user.id];
+    // Delete the todo from the database using template literals
+    const sql = getSql();
+    const result = await sql`DELETE FROM todos WHERE id = ${id} AND user_id = ${session.user.id} RETURNING *`;
 
-    const result = await query(deleteQuery, values);
-    const typedResult = {
-      rows: result.rows as Task[]
-    };
-
-    if (typedResult.rows.length === 0) {
+    if (Array.isArray(result) && result.length === 0) {
       return NextResponse.json(
         { error: 'Todo not found or does not belong to user' },
         { status: 404 }
       );
     }
 
-    const deletedTask: Task = typedResult.rows[0];
+    const deletedTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
 
     return NextResponse.json({ message: 'Todo deleted successfully', task: deletedTask }, { status: 200 });
   } catch (error) {
     console.error('Delete todo error:', error);
+    console.error('Error name:', (error as Error).name);
+    console.error('Error message:', (error as Error).message);
+    console.error('Error stack:', (error as Error).stack);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: (error as Error).message },
       { status: 500 }
     );
   }
@@ -195,33 +235,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    // Get the todo from the database
-    const getQuery = `
-      SELECT *
-      FROM todos
-      WHERE id = $1 AND user_id = $2
-    `;
-    const values = [id, session.user.id];
+    // Get the todo from the database using template literals
+    const sql = getSql();
+    const result = await sql`SELECT * FROM todos WHERE id = ${id} AND user_id = ${session.user.id}`;
 
-    const result = await query(getQuery, values);
-    const typedResult = {
-      rows: result.rows as Task[]
-    };
-
-    if (typedResult.rows.length === 0) {
+    if (Array.isArray(result) && result.length === 0) {
       return NextResponse.json(
         { error: 'Todo not found or does not belong to user' },
         { status: 404 }
       );
     }
 
-    const task: Task = typedResult.rows[0];
+    const task: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
 
     return NextResponse.json(task, { status: 200 });
   } catch (error) {
     console.error('Get todo error:', error);
+    console.error('Error name:', (error as Error).name);
+    console.error('Error message:', (error as Error).message);
+    console.error('Error stack:', (error as Error).stack);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: (error as Error).message },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { query } from '@/lib/db';
+import { getSql } from '@/lib/db';
 import { Task } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -20,27 +20,17 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
     console.log('Fetching todos for user_id:', userId);
 
-    // Get todos for the authenticated user from the database
-    const getQuery = `
-      SELECT *
-      FROM todos
-      WHERE user_id = $1
-      ORDER BY created_at DESC
-    `;
-    const values = [userId];
-
-    console.log('Executing query with params:', { query: getQuery, values });
-
-    const result = await query(getQuery, values);
+    // Get todos for the authenticated user from the database using template literals
+    const sql = getSql();
+    const result = await sql`SELECT * FROM todos WHERE user_id = ${userId} ORDER BY created_at DESC`;
     console.log('Query result received:', result);
 
-    const typedResult = {
-      rows: result.rows as Task[]
-    };
-    console.log('Number of todos retrieved:', typedResult.rows.length);
+    // Handle the result - neon returns an array directly
+    const todos: Task[] = Array.isArray(result) ? result as Task[] : [];
+    console.log('Number of todos retrieved:', todos.length);
 
-    console.log('Returning todos:', typedResult.rows);
-    return NextResponse.json(typedResult.rows);
+    console.log('Returning todos:', todos);
+    return NextResponse.json(todos);
   } catch (error) {
     console.error('Get todos error:', error);
     console.error('Error name:', (error as Error).name);
@@ -77,22 +67,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create the todo in the database
-    const insertQuery = `
-      INSERT INTO todos (title, description, completed, user_id, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, NOW(), NOW())
-      RETURNING *
-    `;
-    const values = [title, description || '', false, session.user.id];
-    console.log('Executing insert query with params:', { query: insertQuery, values });
-
-    const result = await query(insertQuery, values);
+    // Create the todo in the database using template literals
+    const sql = getSql();
+    const result = await sql`INSERT INTO todos (title, description, completed, user_id, created_at, updated_at) VALUES (${title}, ${description || ''}, ${false}, ${session.user.id}, NOW(), NOW()) RETURNING *`;
     console.log('Insert result received:', result);
 
-    const typedResult = {
-      rows: result.rows as Task[]
-    };
-    const newTask: Task = typedResult.rows[0];
+    // Handle the result - neon returns an array directly
+    const newTask: Task = (Array.isArray(result) && result.length > 0 ? result[0] : result) as Task;
     console.log('New task created:', newTask);
 
     return NextResponse.json(newTask, { status: 201 });
