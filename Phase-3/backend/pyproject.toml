@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "todo-mcp-backend"
+version = "0.1.0"
+description = "AI Chatbot for managing todos using MCP architecture"
+authors = [{name = "Developer", email = "dev@example.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "sqlmodel>=0.0.8",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "google-generativeai>=0.4.0",
+    "mcp>=1.0.0",
+    "python-multipart>=0.0.6",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "alembic>=1.11.0",
+    "asyncpg>=0.28.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "isort>=5.0.0",
+    "pre-commit>=3.0.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+known_first_party = ["src"]
+known_third_party = ["fastapi", "uvicorn", "sqlmodel", "pydantic", "google", "mcp"]
