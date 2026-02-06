@@ -1,11 +1,11 @@
-# Todo MCP Backend
+# Todo MCP Backend for Hugging Face Spaces
 
 An AI Chatbot for managing todos using Model Context Protocol (MCP) architecture. This backend provides an intelligent chat interface that understands natural language commands to manage your todo list.
 
 ## Features
 
 - Natural language processing for todo management
-- AI-powered chatbot using Google's Gemini API
+- AI-powered chatbot using Google's Gemini API and Groq
 - MCP (Model Context Protocol) server exposing todo operations as tools
 - Secure user authentication and data isolation
 - Conversation history storage
@@ -15,49 +15,20 @@ An AI Chatbot for managing todos using Model Context Protocol (MCP) architecture
 
 The backend consists of:
 - FastAPI application server
-- SQLModel ORM with Neon PostgreSQL database
+- SQLModel ORM with PostgreSQL database
 - MCP server with 5 todo management tools
-- Gemini AI integration for natural language understanding
+- Gemini AI and Groq integration for natural language understanding
 - Conversation history management
 
-## Prerequisites
+## Environment Variables Required
 
-- Python 3.8+
-- Google Gemini API key
-- Neon PostgreSQL database
+For deployment to Hugging Face Spaces, configure the following environment variables:
 
-## Setup
-
-1. Clone the repository and navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Create a virtual environment and activate it:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install the dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Copy the environment variables file and update the values:
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and set:
-   - `DATABASE_URL`: Your Neon PostgreSQL connection string
-   - `GEMINI_API_KEY`: Your Google Gemini API key
-   - `SECRET_KEY`: A random secret key for JWT tokens
-
-5. Run the application:
-   ```bash
-   uvicorn src.main:app --reload --port 8000
-   ```
+- `DATABASE_URL`: PostgreSQL database connection string
+- `GEMINI_API_KEY`: Google Gemini API key
+- `GROQ_API_KEY`: Groq API key (optional)
+- `SECRET_KEY`: Secret key for JWT tokens
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed origins for CORS
 
 ## API Endpoints
 
@@ -77,13 +48,6 @@ The backend exposes the following tools via MCP:
 4. `delete_task` - Delete a task
 5. `update_task` - Update a task's title or description
 
-## Environment Variables
-
-- `DATABASE_URL`: PostgreSQL database connection string
-- `GEMINI_API_KEY`: Google Gemini API key
-- `SECRET_KEY`: Secret key for JWT tokens
-- `ALLOWED_ORIGINS`: Comma-separated list of allowed origins for CORS
-
 ## Usage Examples
 
 Natural language commands supported by the chatbot:
@@ -93,21 +57,9 @@ Natural language commands supported by the chatbot:
 - "Delete task with ID abc123"
 - "Update task title to 'New Title'"
 
-## Development
+## Hugging Face Spaces Deployment
 
-To run with auto-reload during development:
-```bash
-uvicorn src.main:app --reload
-```
-
-To run tests:
-```bash
-pytest
-```
-
-## Integration with Frontend
-
-The backend is designed to work with the companion Next.js frontend. The CORS settings allow requests from `http://localhost:3000` by default.
+This backend is configured for deployment on Hugging Face Spaces with Docker. The application runs on port 7860.
 
 ## License
 

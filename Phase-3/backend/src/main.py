@@ -44,6 +44,10 @@ def create_app() -> FastAPI:
     def health_check():
         return {"status": "healthy"}
 
+    @app.get("/")
+    def root():
+        return {"message": "Todo MCP Backend is running on Hugging Face Spaces!"}
+
     return app
 
 
