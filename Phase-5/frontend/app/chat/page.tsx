@@ -51,13 +51,14 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      console.log("Calling backend API:", "http://localhost:8000/api/chat");
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      console.log("Calling backend API:", `${backendUrl}/api/chat`);
       console.log("Sending payload:", {
         message: inputValue,
         user_id: session.user?.id || "unknown",
       });
-      
-      const response = await fetch("http://localhost:8000/api/chat", {
+
+      const response = await fetch(`${backendUrl}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -89,11 +90,11 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error sending message:", error);
-
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Sorry, I encountered an error: ${(error as Error)?.message || 'Unable to connect to the AI service'}`,
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unable to connect to the AI service'}`,
         timestamp: new Date(),
       };
 
